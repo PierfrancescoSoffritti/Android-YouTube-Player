@@ -31,6 +31,8 @@ class YouTubePlayerView(context: Context, attrs: AttributeSet? = null, defStyleA
     private val fullScreenHelper = FullScreenHelper(this)
 
     var enableAutomaticInitialization: Boolean
+    private val autoPlay: Boolean
+    private val videoId: String?
 
     init {
         addView(legacyTubePlayerView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -38,9 +40,9 @@ class YouTubePlayerView(context: Context, attrs: AttributeSet? = null, defStyleA
         val typedArray = context.theme.obtainStyledAttributes(attrs, R.styleable.YouTubePlayerView, 0, 0)
 
         enableAutomaticInitialization = typedArray.getBoolean(R.styleable.YouTubePlayerView_enableAutomaticInitialization, true)
-        val autoPlay = typedArray.getBoolean(R.styleable.YouTubePlayerView_autoPlay, false)
+        autoPlay = typedArray.getBoolean(R.styleable.YouTubePlayerView_autoPlay, false)
         val handleNetworkEvents = typedArray.getBoolean(R.styleable.YouTubePlayerView_handleNetworkEvents, true)
-        val videoId = typedArray.getString(R.styleable.YouTubePlayerView_videoId)
+        videoId = typedArray.getString(R.styleable.YouTubePlayerView_videoId)
 
         val useNativeUi = typedArray.getBoolean(R.styleable.YouTubePlayerView_useNativeUi, false)
         val enableLiveVideoUi = typedArray.getBoolean(R.styleable.YouTubePlayerView_enableLiveVideoUi, false)
@@ -58,14 +60,10 @@ class YouTubePlayerView(context: Context, attrs: AttributeSet? = null, defStyleA
                     "you should manually initialize the YouTubePlayerView using 'initializeWithNativeUi'")
         }
 
-        if(videoId == null && autoPlay)
-            throw IllegalStateException("YouTubePlayerView: videoId is not set but autoPlay is set to true. This combination is not possible.")
-
-
         val youTubePlayerListener = object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 videoId?.let {
-                    youTubePlayer.loadOrCueVideo(legacyTubePlayerView.canPlay && autoPlay, videoId, 0f)
+                    youTubePlayer.loadOrCueVideo(legacyTubePlayerView.canPlay && autoPlay, it, 0f)
                 }
 
                 youTubePlayer.removeListener(this)
@@ -96,6 +94,13 @@ class YouTubePlayerView(context: Context, attrs: AttributeSet? = null, defStyleA
                 fullScreenHelper.exitFullScreen()
             }
         })
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if(videoId == null && autoPlay) {
+            throw IllegalArgumentException("videoId is not set but autoPlay is set to true. This combination is not possible.")
+        }
     }
 
     /**
